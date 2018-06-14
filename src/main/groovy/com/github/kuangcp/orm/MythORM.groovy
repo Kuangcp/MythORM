@@ -13,20 +13,21 @@ import java.util.regex.Pattern
  * Created by https://github.com/kuangcp
  *  实现了一个查询记录，插入记录
  *  TODO 需要使用工厂模式进行修改, 只处理一次
+ *  TODO 现在使用单例模式
  * @author kuangcp
  * @date 18-6-14  下午9:05
  */
 
-class MythORM {
+enum MythORM {
+  INSTANCE
+
   private DBType dbType
   private DBConfig dbConfig
 
-  private MythORM(DBType dbType) {
-    this.dbType = dbType
-  }
 
-  static MythORM build(DBType dbType) {
-    return new MythORM(dbType)
+  MythORM initDBType(DBType dbType){
+    INSTANCE.dbType = dbType
+    return INSTANCE
   }
 
   /**
@@ -88,7 +89,8 @@ class MythORM {
     sqlBuilder.append(")")
     valueBuilder.append(")")
     String sql = sqlBuilder.toString() + valueBuilder.toString()
-    return new DBAction(dbConfig, dbType).executeUpdateSQL(sql)
+    return DBAction.INSTANCE.initByDBConfig(dbConfig, dbType).executeUpdateSQL(sql)
+//    return new DBAction(dbConfig, dbType).executeUpdateSQL(sql)
   }
 
   /**
@@ -141,7 +143,7 @@ class MythORM {
     sqlBuilder.delete(sqlBuilder.length() - 1, sqlBuilder.length())
     sqlBuilder.append(" ").append(condition)
     System.out.println(" 更新  " + sqlBuilder.toString())
-    return new DBAction(dbConfig, dbType).executeUpdateSQL(sqlBuilder.toString())
+    return DBAction.INSTANCE.initByDBConfig(dbConfig, dbType).executeUpdateSQL(sqlBuilder.toString())
   }
 
   /**
@@ -160,7 +162,7 @@ class MythORM {
     T obj
     DBAction db = null
     try {
-      db = new DBAction(DBConfig, DBType.Mysql)
+      db = DBAction.INSTANCE.initByDBConfig(dbConfig, dbType)
       ResultSet resultSet = db.queryBySQL(sql)
       Method[] methods = target.getMethods()
       while (resultSet.next()) {

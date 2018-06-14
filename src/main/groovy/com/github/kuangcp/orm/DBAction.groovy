@@ -2,6 +2,7 @@ package com.github.kuangcp.orm
 
 import com.github.kuangcp.orm.base.DBType
 import com.github.kuangcp.orm.config.DBConfig
+import groovy.util.logging.Slf4j
 
 import java.sql.Connection
 import java.sql.DriverManager
@@ -14,39 +15,42 @@ import java.sql.SQLException
  * @author kuangcp
  * @date 18-6-14  下午9:02
  */
-class DBAction {
-  private static int count = 0
+@Slf4j
+enum DBAction {
+
+  INSTANCE
+
+  private int count = 0
   private PreparedStatement ps = null
   private Connection cn = null
   private ResultSet rs = null
   private String driver
   private StringBuilder url = new StringBuilder()
 
-  /**
-   * 通过配置进行初始化
-   * @param config DBConfig
-   * @param type DBType
-   */
-  DBAction(DBConfig config, DBType type) {
-    this.driver = config.getDriver()
-    this.url.append("jdbc:").append(type.name()).append("://").append(config.getHost()).append(":").append(config.getPort())
+  DBAction() {
+  }
+
+  DBAction initByDBConfig(DBConfig config, DBType type) {
+    INSTANCE.driver = type.getDriver()
+    INSTANCE.url.append("jdbc:").append(type.name()).append("://").append(config.getHost()).
+        append(":").append(config.getPort())
         .append("/").append(config.getDatabase()).append("?user=")
         .append(config.getUsername()).append("&password=").append(config.getPassword())
         .append("&userUnicode=true&characterEncoding=UTF8")
+    return INSTANCE
+  }
+  /**
+   * 初始化 MySQL
+   */
+  static DBAction buildByMysql(DBConfig config) {
+    return INSTANCE.initByDBConfig(config, DBType.Mysql)
   }
 
   /**
-   * Mysql 操作
+   * 初始化 PostgreSQL
    */
-  static DBAction buildWithMysql(DBConfig config){
-    return new DBAction(config, DBType.Mysql)
-  }
-
-  /**
-   * PostgreSQL 操作
-   */
-  static DBAction buildWithPostgreSQL(DBConfig config){
-    return new DBAction(config, DBType.PostgreSQL)
+  static DBAction buildByPostgreSQL(DBConfig config) {
+    return INSTANCE.initByDBConfig(config, DBType.PostgreSQL)
   }
 
   /**
@@ -58,7 +62,6 @@ class DBAction {
       Class.forName(driver)
       cn = DriverManager.getConnection(url.toString())
     } catch (Exception e) {
-
       log.error(url.toString() + " 获取连接，异常！", e)
     }
     return cn

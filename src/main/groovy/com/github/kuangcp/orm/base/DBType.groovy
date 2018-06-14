@@ -1,5 +1,4 @@
 package com.github.kuangcp.orm.base
-
 /**
  * Created by https://github.com/kuangcp
  * 数据库类型, 并设置好驱动类
@@ -11,11 +10,26 @@ enum DBType {
   Mysql("mysql", "com.mysql.jdbc.Driver"),
   PostgreSQL("postgresql", "org.postgresql.Driver")
 
-
   DBType(String type, String driver) {
     this.type = type
     this.driver = driver
   }
   private String type
   private String driver
+
+  String getType() {
+    return type
+  }
+
+  void setType(String type) {
+    this.type = type
+  }
+
+  String getDriver() {
+    return driver
+  }
+
+  void setDriver(String driver) {
+    this.driver = driver
+  }
 }

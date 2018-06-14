@@ -1,13 +1,14 @@
 package com.github.kuangcp.orm.config
 
 import com.github.kuangcp.orm.base.ExternalConfig
+import groovy.transform.ToString
 
 /**
  * Created by https://github.com/kuangcp
  * @author kuangcp
  * @date 18-6-14  下午9:00
  */
-
+@ToString
 class DBConfig {
 
   String host
@@ -23,7 +24,6 @@ class DBConfig {
    * @return Optional < DBConfig >  可能为空
    */
   static Optional<DBConfig> buildByYaml() {
-    return Optional.
-        ofNullable(YamlUtil.readFile(DBConfig.class, ExternalConfig.JDBC_CONNECTION_CONFIG))
+    return Optional.ofNullable(YmlUtil.readFile(DBConfig.class, ExternalConfig.JDBC_CONNECTION_CONFIG))
   }
 }
