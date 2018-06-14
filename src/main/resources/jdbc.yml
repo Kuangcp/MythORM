@@ -1,0 +1,6 @@
+--- !com.kuangcp.mythpoi.utils.db.BaseConfig
+database: test
+host: localhost
+password: ad
+port: 3306
+username: myth
