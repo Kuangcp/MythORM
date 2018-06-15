@@ -1,35 +1,27 @@
 package com.github.kuangcp.orm.base
 /**
  * Created by https://github.com/kuangcp
- * 数据库类型, 并设置好驱动类
+ * 数据库类型, 并设置好驱动类, 枚举名字就是URL中的名字, 需要严格一一对应
  * @author kuangcp
  * @date 18-6-14  下午8:42
  */
 enum DBType {
 
-  Mysql("mysql", "com.mysql.jdbc.Driver"),
-  PostgreSQL("postgresql", "org.postgresql.Driver")
+  Mysql("com.mysql.jdbc.Driver",
+      "jdbc:mysql://%s:%s/%s?user=%s&password=%s&userUnicode=true&characterEncoding=UTF8&useSSL=false"),
+  PostgreSQL("org.postgresql.Driver",
+      "jdbc:postgresql://%s:%s/%s?user=%s&password=%s&useUnicode=true&characterEncoding=utf-8&useSSL=false")
 
-  DBType(String type, String driver) {
-    this.type = type
+  /**
+   * @param driver 驱动类名
+   * @param url 数据库连接URL
+   */
+  DBType(String driver, String url) {
     this.driver = driver
+    this.url = url
   }
-  private String type
-  private String driver
+  String driver
+  String url
 
-  String getType() {
-    return type
-  }
 
-  void setType(String type) {
-    this.type = type
-  }
-
-  String getDriver() {
-    return driver
-  }
-
-  void setDriver(String driver) {
-    this.driver = driver
-  }
 }

@@ -16,14 +16,14 @@ class DBConfig {
   String database
   String username
   String password
-  String driver
+  String type
 
   /**
    * 从yml加载配置,
    *
    * @return Optional < DBConfig >  可能为空
    */
-  static Optional<DBConfig> buildByYaml() {
+  static Optional<DBConfig> buildByYml() {
     return Optional.ofNullable(YmlUtil.readFile(DBConfig.class, ExternalConfig.JDBC_CONNECTION_CONFIG))
   }
 }

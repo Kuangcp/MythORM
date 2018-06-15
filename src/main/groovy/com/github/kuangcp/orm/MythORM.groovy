@@ -1,7 +1,7 @@
 package com.github.kuangcp.orm
 
-import com.github.kuangcp.orm.base.DBType
 import com.github.kuangcp.orm.config.DBConfig
+import groovy.util.logging.Slf4j
 
 import java.lang.reflect.Method
 import java.sql.ResultSet
@@ -11,22 +11,33 @@ import java.util.regex.Pattern
 
 /**
  * Created by https://github.com/kuangcp
- *  实现了一个查询记录，插入记录
- *  TODO 需要使用工厂模式进行修改, 只处理一次
- *  TODO 现在使用单例模式
+ *  实现了一个查询记录，插入记录 的 单例 ORM
  * @author kuangcp
  * @date 18-6-14  下午9:05
  */
-
+@Slf4j
 enum MythORM {
+
   INSTANCE
 
-  private DBType dbType
-  private DBConfig dbConfig
+  DBConfig dbConfig
 
+  /**
+   * 采用默认配置进行初始化
+   * @return
+   */
+  static MythORM defaultInit() {
+    if (INSTANCE.dbConfig == null) {
+      Optional<DBConfig> config = DBConfig.buildByYml()
 
-  MythORM initDBType(DBType dbType){
-    INSTANCE.dbType = dbType
+      if (config.isPresent()) {
+        INSTANCE.dbConfig = config.get()
+      } else {
+        log.error("从默认配置文件加载数据库配置失败")
+      }
+    } else {
+      log.warn("数据库默认配置已经加载, 无需重复加载")
+    }
     return INSTANCE
   }
 
@@ -38,19 +49,25 @@ enum MythORM {
    * @return boolean 是否成功
    */
   boolean save(Object obj) throws SQLException {
+    if (!isConfigNotNull()) {
+      return false
+    }
     Class target = obj.getClass()
     StringBuilder sqlBuilder = new StringBuilder("insert into ")
     StringBuilder valueBuilder = new StringBuilder("values(")
 
-    Method[] methods = target.getMethods()
+    Method[] methods = target.getDeclaredMethods()
     String className = target.getName()
-    String tableName = classToTableName(className)
+    String tableName = convertToUnderLineStyle(className)
     sqlBuilder.append(tableName).append(" (")
 
     for (Method method : methods) {
       String mName = method.getName()
-      if (mName.startsWith("get") && !mName.startsWith("getClass")) {
-        String colName = classToTableName(mName.substring(3, mName.length()))
+      // TODO 如何有效的正确筛选字段
+//      log.debug(mName+" = "+method.genericReturnType.toString())
+      if (mName.startsWith("get") && !mName.startsWith("getClass") &&
+          !mName.startsWith("getMeta") && !mName.startsWith("getProperty")) {
+        String colName = convertToUnderLineStyle(mName.substring(3, mName.length()))
         sqlBuilder.append(colName).append(",")
         Class returnType = method.getReturnType()
         // TODO 优化类型
@@ -89,8 +106,7 @@ enum MythORM {
     sqlBuilder.append(")")
     valueBuilder.append(")")
     String sql = sqlBuilder.toString() + valueBuilder.toString()
-    return DBAction.INSTANCE.initByDBConfig(dbConfig, dbType).executeUpdateSQL(sql)
-//    return new DBAction(dbConfig, dbType).executeUpdateSQL(sql)
+    return DBAction.INSTANCE.initByDBConfig(dbConfig).executeUpdateSQL(sql)
   }
 
   /**
@@ -102,19 +118,22 @@ enum MythORM {
    * @throws SQLException
    */
   boolean update(Object obj, String condition) throws SQLException {
+    if (!isConfigNotNull()) {
+      return false
+    }
     Class target = obj.getClass()
     StringBuilder sqlBuilder = new StringBuilder("update ")
 
     Method[] methods = target.getMethods()
     String className = target.getName()
     //通过正则表达式来截取类名，赋值给表名
-    String tableName = classToTableName(className)
+    String tableName = convertToUnderLineStyle(className)
     sqlBuilder.append(tableName).append(" set ")
 
     for (Method method : methods) {
       String mName = method.getName()
       if (mName.startsWith("get") && !mName.startsWith("getClass")) {
-        String colName = classToTableName(mName.substring(3, mName.length()))
+        String colName = convertToUnderLineStyle(mName.substring(3, mName.length()))
         Class returnType = method.getReturnType()
         // TODO 优化类型
         try {
@@ -143,7 +162,7 @@ enum MythORM {
     sqlBuilder.delete(sqlBuilder.length() - 1, sqlBuilder.length())
     sqlBuilder.append(" ").append(condition)
     System.out.println(" 更新  " + sqlBuilder.toString())
-    return DBAction.INSTANCE.initByDBConfig(dbConfig, dbType).executeUpdateSQL(sqlBuilder.toString())
+    return DBAction.INSTANCE.initByDBConfig(dbConfig).executeUpdateSQL(sqlBuilder.toString())
   }
 
   /**
@@ -153,25 +172,29 @@ enum MythORM {
    * @return List 对象集合没有泛型
    */
   def <T> List<T> listAll(Class<T> target) {
-    String tableName = classToTableName(target.getName())
-    return query("select * from " + tableName, target, dbConfig)
+    String tableName = convertToUnderLineStyle(target.getName())
+    return query("select * from " + tableName, target)
   }
 
-  def <T> List<T> query(String sql, Class<T> target, DBConfig DBConfig) {
+  def <T> List<T> query(String sql, Class<T> target) {
+    if (!isConfigNotNull()) {
+      return null
+    }
     List<T> list = new ArrayList<>()
     T obj
     DBAction db = null
     try {
-      db = DBAction.INSTANCE.initByDBConfig(dbConfig, dbType)
+      db = DBAction.INSTANCE.initByDBConfig(dbConfig)
       ResultSet resultSet = db.queryBySQL(sql)
       Method[] methods = target.getMethods()
       while (resultSet.next()) {
         obj = target.newInstance()
         for (Method method : methods) {//获取所有方法
           String methodName = method.getName()
-          if (methodName.startsWith("set")) {//将所有set开头的方法取出来
+          if (methodName.startsWith("set") && !methodName.startsWith("setProperty")) {
+//将所有set开头的方法取出来
             //根据方法名字自动提取表中对应的列名
-            String colName = classToTableName(methodName.substring(3, methodName.length()))
+            String colName = convertToUnderLineStyle(methodName.substring(3, methodName.length()))
             //得到方法的参数类型
             Class[] params = method.getParameterTypes()
 //							System.out.print(" : "+resultSet.getString(colName)+"\n");
@@ -201,30 +224,37 @@ enum MythORM {
   }
 
   /**
-   * TODO 驼峰转下划线
-   * @param className 类名或者属性名
-   * @return 下划线方式字符串
+   * 将驼峰风格字符串转换为下划线风格
+   * @param origin 类名或者属性名
    */
-  String classToTableName(String className) {
-    String tableName = className.split("\\.")[className.split("\\.").length - 1]
-    int count = 0
-    // 如果小写字母开头，属性名
-    Pattern pattern = Pattern.compile("^[a-z]")
+  static String convertToUnderLineStyle(String origin) {
+    String tableName = origin.split("\\.")[origin.split("\\.").length - 1]
+    // 如果首字母大小就先将首字母小写
+    Pattern pattern = Pattern.compile("^[A-Z]")
     Matcher matcher = pattern.matcher(tableName)
     if (matcher.find()) {
-      count++
+      tableName = tableName.charAt(0).toLowerCase().toString() +
+          tableName.substring(1, tableName.length())
     }
-    // 大写字母开头 类名
+    // 将其余的大写字母前追加_ 最后整个字符串转为小写
     pattern = Pattern.compile("[A-Z]")
     matcher = pattern.matcher(tableName)
     while (matcher.find()) {
-      count++
-      if (count == 1) {
-        continue
-      }
-      String w = matcher.group().trim()
-      tableName = tableName.replace(w, "_" + w)
+      String target = matcher.group().trim()
+      tableName = tableName.replace(target, "_" + target)
     }
     return tableName.toLowerCase()
+  }
+
+  boolean isConfigNotNull() {
+    if (dbConfig == null) {
+      log.info("未手动初始化DBConfig, 将采用默认配置")
+      defaultInit()
+      if (dbConfig == null) {
+        log.error("尚未初始化 数据库配置 DBConfig, 尝试加载默认配置也失败")
+        return false
+      }
+    }
+    return true
   }
 }

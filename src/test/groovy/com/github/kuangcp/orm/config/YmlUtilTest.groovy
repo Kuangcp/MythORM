@@ -12,7 +12,7 @@ class YmlUtilTest {
   @Test
   void testCreateFile() throws Exception {
     DBConfig dbConfig = new DBConfig()
-    dbConfig.setHost("333")
+    dbConfig.setHost("33334")
     boolean result = YmlUtil.createFile(dbConfig, "src/main/resources/test.yml")
     println result
   }

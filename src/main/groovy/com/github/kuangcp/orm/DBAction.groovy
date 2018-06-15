@@ -2,13 +2,10 @@ package com.github.kuangcp.orm
 
 import com.github.kuangcp.orm.base.DBType
 import com.github.kuangcp.orm.config.DBConfig
+import groovy.transform.ToString
 import groovy.util.logging.Slf4j
 
-import java.sql.Connection
-import java.sql.DriverManager
-import java.sql.PreparedStatement
-import java.sql.ResultSet
-import java.sql.SQLException
+import java.sql.*
 
 /**
  * Created by https://github.com/kuangcp
@@ -16,41 +13,49 @@ import java.sql.SQLException
  * @date 18-6-14  下午9:02
  */
 @Slf4j
+@ToString
 enum DBAction {
 
   INSTANCE
 
-  private int count = 0
-  private PreparedStatement ps = null
-  private Connection cn = null
-  private ResultSet rs = null
-  private String driver
-  private StringBuilder url = new StringBuilder()
+  int count = 0
+  PreparedStatement ps = null
+  Connection cn = null
+  ResultSet rs = null
+  String driver
+  String url
 
   DBAction() {
   }
 
-  DBAction initByDBConfig(DBConfig config, DBType type) {
-    INSTANCE.driver = type.getDriver()
-    INSTANCE.url.append("jdbc:").append(type.name()).append("://").append(config.getHost()).
-        append(":").append(config.getPort())
-        .append("/").append(config.getDatabase()).append("?user=")
-        .append(config.getUsername()).append("&password=").append(config.getPassword())
-        .append("&userUnicode=true&characterEncoding=UTF8")
+  static DBAction defaultInit(){
+    Optional<DBConfig> dbConfig = DBConfig.buildByYml()
+    dbConfig.ifPresent({
+      initByDBConfig(dbConfig.get())
+    })
     return INSTANCE
   }
-  /**
-   * 初始化 MySQL
-   */
-  static DBAction buildByMysql(DBConfig config) {
-    return INSTANCE.initByDBConfig(config, DBType.Mysql)
-  }
-
-  /**
-   * 初始化 PostgreSQL
-   */
-  static DBAction buildByPostgreSQL(DBConfig config) {
-    return INSTANCE.initByDBConfig(config, DBType.PostgreSQL)
+  static DBAction initByDBConfig(DBConfig config) {
+    if(config == null){
+      log.error("请初始化数据库配置")
+      return INSTANCE
+    }
+    DBType type
+    switch (config.type) {
+      case "mysql":
+        type = DBType.Mysql
+        break
+      case "postgresql":
+        type = DBType.PostgreSQL
+        break
+      default:
+        log.error("not support this database type : " + config.type)
+        return null
+    }
+    INSTANCE.driver = type.getDriver()
+    INSTANCE.url = String.format(type.getUrl(), config.host, config.port, config.database,
+        config.username, config.password)
+    return INSTANCE
   }
 
   /**
@@ -60,9 +65,9 @@ enum DBAction {
   Connection getConnection() {
     try {
       Class.forName(driver)
-      cn = DriverManager.getConnection(url.toString())
+      cn = DriverManager.getConnection(url)
     } catch (Exception e) {
-      log.error(url.toString() + " 获取连接，异常！", e)
+      log.error(url + " 获取连接，异常！", e)
     }
     return cn
   }
@@ -95,15 +100,14 @@ enum DBAction {
    */
   List<String[]> queryReturnList(String sql) throws SQLException {
     log.debug("查询SQL " + sql)
-    int cols
     List<String[]> data = new ArrayList<>(0)
     ResultSet rs = queryBySQL(sql)
     try {
-      cols = rs.getMetaData().getColumnCount()
+      int cols = rs.getMetaData().getColumnCount()
       while (rs.next()) {
         String[] row = new String[cols]
-        for (int i = 0; i < cols; i++) {
-          row[i] = rs.getString(++i)
+        for (int i = 1; i <= cols; i++) {
+          row[i - 1] = rs.getString(i)
         }
         data.add(row)
       }
@@ -144,7 +148,7 @@ enum DBAction {
   }
 
   /**
-   * 插入多条数据并采用了事务
+   * 事务性, 执行多条SQL
    *
    * @param sqlArray SQL的String数组
    * @return boolean 是否成功
@@ -185,7 +189,6 @@ enum DBAction {
    * 关闭数据库资源
    */
   void closeAll() {
-    //关闭资源 后打开先关闭
     try {
       if (rs != null) {
         rs.close()

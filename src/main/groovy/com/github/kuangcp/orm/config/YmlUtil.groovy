@@ -28,7 +28,7 @@ class YmlUtil {
 //    filePath = "src/main/resources/"+filePath
 //    ClassLoader classLoader = YmlUtil.class.getClassLoader()
 //    logger.debug(classLoader.getResource("logback.xml") as String)
-    log.debug("生成配置文件路径  "+filePath)
+    log.debug("生成配置文件路径  " + filePath)
     factory.setCodec(mapper)
     YAMLGenerator generator
     try {
@@ -60,8 +60,10 @@ class YmlUtil {
         log.debug("读取yml : " + filePath)
       }
       return mapper.readValue(new File(filePath), target)
-    } catch (Exception e) {
-      e.printStackTrace()
+    } catch (FileNotFoundException e) {
+      log.error("加载yml配置文件, 配置文件找不到", e)
+    }catch (Exception e) {
+      log.error("加载yml配置文件出错", e)
       return null
     }
   }

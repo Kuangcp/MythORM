@@ -1,6 +1,7 @@
 --- !com.kuangcp.mythpoi.utils.db.BaseConfig
-database: test
+database: graduate
 host: localhost
 password: ad
 port: 3306
 username: myth
+type: mysql
