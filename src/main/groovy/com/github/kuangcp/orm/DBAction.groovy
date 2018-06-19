@@ -9,6 +9,7 @@ import java.sql.*
 
 /**
  * Created by https://github.com/kuangcp
+ * TODO 为了避免NPE, 全部使用 Optional
  * @author kuangcp
  * @date 18-6-14  下午9:02
  */
@@ -25,18 +26,16 @@ enum DBAction {
   String driver
   String url
 
-  DBAction() {
-  }
-
-  static DBAction defaultInit(){
+  static DBAction defaultInit() {
     Optional<DBConfig> dbConfig = DBConfig.buildByYml()
     dbConfig.ifPresent({
       initByDBConfig(dbConfig.get())
     })
     return INSTANCE
   }
+
   static DBAction initByDBConfig(DBConfig config) {
-    if(config == null){
+    if (config == null) {
       log.error("请初始化数据库配置")
       return INSTANCE
     }
@@ -62,18 +61,23 @@ enum DBAction {
    * 根据参数获取数据库连接对象
    * @return Connection 连接
    */
-  Connection getConnection() {
+  Connection getConnection() throws SQLException {
     try {
       Class.forName(driver)
       cn = DriverManager.getConnection(url)
-    } catch (Exception e) {
+    } catch (SQLException e) {
       log.error(url + " 获取连接，异常！", e)
+      throw e
     }
     return cn
   }
 
   private void loadPreparedStatement(String sql) throws SQLException {
-    getConnection()
+    try {
+      getConnection()
+    } catch (SQLException e) {
+      throw e
+    }
     ps = cn.prepareStatement(sql)
   }
 
@@ -86,7 +90,8 @@ enum DBAction {
       loadPreparedStatement(sql)
       rs = ps.executeQuery()
     } catch (Exception e) {
-      e.printStackTrace()
+      log.error("执行SQL失败", e)
+      return null
     }
     log.debug("这是第" + count + "次查询操作")
     return rs
@@ -96,12 +101,16 @@ enum DBAction {
    * SQL查询并返回List集合
    *
    * @param sql SQL 语句
-   * @return List String数组 一行是一个String[] 按查询的字段顺序
+   * @return List String数组 一行是一个String[] 按查询的字段顺序 SQL异常返回null
    */
   List<String[]> queryReturnList(String sql) throws SQLException {
     log.debug("查询SQL " + sql)
-    List<String[]> data = new ArrayList<>(0)
     ResultSet rs = queryBySQL(sql)
+    if (rs == null) {
+      return null
+    }
+    List<String[]> data = new ArrayList<>(0)
+
     try {
       int cols = rs.getMetaData().getColumnCount()
       while (rs.next()) {

@@ -1,6 +1,5 @@
 package com.github.kuangcp.orm
 
-import com.github.kuangcp.orm.base.DBType
 import com.github.kuangcp.orm.config.DBConfig
 import org.junit.Test
 
@@ -26,19 +25,5 @@ class DBActionTest extends GroovyTestCase {
         println "表中数据 : "+it
       })
     })
-  }
-
-  @Test
-  void testStringFormat(){
-    Optional<DBConfig> dbConfig = DBConfig.buildByYml()
-    dbConfig.ifPresent({
-      DBConfig config = dbConfig.get()
-      println String.format(DBType.Mysql.getUrl(), config.host, config.port, config.database,
-          config.username, config.password).toString()
-    })
-
-    String format = "jdbc:Mysql://%s:::"
-    String result = String.format(format, 1)
-    println result
   }
 }
