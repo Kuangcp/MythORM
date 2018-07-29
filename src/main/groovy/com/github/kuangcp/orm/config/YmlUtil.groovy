@@ -28,7 +28,7 @@ class YmlUtil {
 //    filePath = "src/main/resources/"+filePath
 //    ClassLoader classLoader = YmlUtil.class.getClassLoader()
 //    logger.debug(classLoader.getResource("logback.xml") as String)
-    log.debug("生成配置文件路径  " + filePath)
+    log.debug("生成配置文件 filePath={}", filePath)
     factory.setCodec(mapper)
     YAMLGenerator generator
     try {
