@@ -1,8 +1,15 @@
 out/
-target/
 *.iml
+
+target/
+
 *.class
+
 .gradle/
+.gradletasknamecache
+
+
 logs/
 *.log
-.gradletasknamecache
+
+test.*

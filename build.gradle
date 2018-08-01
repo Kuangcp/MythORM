@@ -33,4 +33,6 @@ dependencies {
   compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
   compile 'com.fasterxml.jackson.core:jackson-databind:2.9.5'
   compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.5'
+
+  testCompile "com.github.kuangcp:JavaToolKit:0.0.4-SNAPSHOT"
 }

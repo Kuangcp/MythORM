@@ -1,7 +1,7 @@
---- !com.kuangcp.mythpoi.utils.db.BaseConfig
-database: graduate
-host: localhost
-password: ad
-port: 3306
-username: myth
-type: mysql
+---
+host: "localhost"
+port: 5432
+database: "key"
+username: "postgres"
+password: "jiushi"
+type: "PostgreSQL"

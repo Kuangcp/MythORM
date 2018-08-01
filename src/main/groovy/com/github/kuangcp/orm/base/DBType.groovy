@@ -9,19 +9,19 @@ enum DBType {
 
   Mysql("com.mysql.jdbc.Driver",
       "jdbc:mysql://%s:%s/%s?user=%s&password=%s&userUnicode=true&characterEncoding=UTF8&useSSL=false"),
+
   PostgreSQL("org.postgresql.Driver",
       "jdbc:postgresql://%s:%s/%s?user=%s&password=%s&useUnicode=true&characterEncoding=utf-8&useSSL=false")
 
   /**
-   * @param driver 驱动类名
-   * @param url 数据库连接URL
+   * @param driver driver class
+   * @param url use this URL to connect db
    */
   DBType(String driver, String url) {
     this.driver = driver
     this.url = url
   }
+
   String driver
   String url
-
-
 }

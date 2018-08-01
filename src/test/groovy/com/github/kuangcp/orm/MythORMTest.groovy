@@ -1,5 +1,8 @@
 package com.github.kuangcp.orm
 
+import com.github.kuangcp.time.GetRunTime
+import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 
 /**
@@ -9,18 +12,57 @@ import org.junit.Test
  */
 class MythORMTest {
 
+  DBAction action
+  MythORM orm
+  GetRunTime countTime = GetRunTime.INSTANCE
+
+  @Before
+  void init() {
+    action = DBAction.INSTANCE.defaultInit()
+    orm = MythORM.INSTANCE.defaultInit()
+
+    def exist = action.isTableExist("user_type")
+
+
+    if (exist) {
+      action.executeUpdateSQL("drop table user_type")
+    }
+    action.executeUpdateSQL("create table user_type(a int, b int)")
+  }
+
   @Test
   void testSave() {
-    DBAction action = DBAction.INSTANCE.defaultInit()
-    action.executeUpdateSQL("delete from user_type")
+
+    List<UserType> userTypeList = new ArrayList<>()
+
+    countTime.startCount()
     for (int i = 0; i < 10; i++) {
-      MythORM orm = MythORM.INSTANCE.defaultInit()
       UserType type = new UserType()
-      type.a = i + 1
+      type.a = i
       type.b = i + 2
-      boolean result = orm.save(type)
-      println result
+      userTypeList.add(type)
+//      boolean result = orm.save(type)
+//      assert result
     }
+    boolean result = orm.saveAll(userTypeList)
+    countTime.endCount("batch affair")
+    assert result
+  }
+
+  @Test
+  void testPrepare() {
+
+    def statement = action.getConnection().prepareStatement("insert into user_type values(?, ?)")
+
+
+    countTime.startCount()
+    for (int i = 0; i < 10; i++) {
+      statement.setInt(1, i)
+      statement.setInt(2, i + 1)
+      def update = statement.executeUpdate()
+      println update
+    }
+    countTime.endCount("prepare statement")
   }
 
 //  @Test
@@ -30,6 +72,7 @@ class MythORMTest {
 //  }
 //
   @Test
+  @Ignore
   void testListAll() {
 //    List<UserType> result = MythORM.INSTANCE.defaultInit().listAll(UserType.class)
     List<UserType> result = MythORM.INSTANCE.listAll(UserType.class)
@@ -47,6 +90,7 @@ class MythORMTest {
 //  }
 //
   @Test
+  @Ignore
   void testClassToTableName() {
     String result = MythORM.convertToUnderLineStyle(MythORMTest.class.getName())
     println MythORMTest.class.getSimpleName()

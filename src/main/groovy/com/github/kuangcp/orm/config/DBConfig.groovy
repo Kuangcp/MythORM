@@ -1,5 +1,6 @@
 package com.github.kuangcp.orm.config
 
+import com.github.kuangcp.orm.base.DBType
 import com.github.kuangcp.orm.base.ExternalConfig
 import groovy.transform.ToString
 
@@ -19,11 +20,16 @@ class DBConfig {
   String type
 
   /**
-   * 从yml加载配置,
+   * 从jdbc.yml加载配置
    *
    * @return Optional < DBConfig >  可能为空
    */
   static Optional<DBConfig> buildByYml() {
-    return Optional.ofNullable(YmlUtil.readFile(DBConfig.class, ExternalConfig.JDBC_CONNECTION_CONFIG))
+    return Optional.
+        ofNullable(YmlUtil.readFile(DBConfig.class, ExternalConfig.JDBC_CONNECTION_CONFIG))
+  }
+
+  boolean isThisType(DBType type) {
+    return this.type.compareToIgnoreCase(type.name()) == 0
   }
 }

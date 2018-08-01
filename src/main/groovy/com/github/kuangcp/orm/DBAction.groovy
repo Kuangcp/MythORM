@@ -10,6 +10,8 @@ import java.sql.*
 /**
  * Created by https://github.com/kuangcp
  * TODO 为了避免NPE, 全部使用 Optional
+ * 批量执行 https://www.mkyong.com/jdbc/jdbc-preparedstatement-example-batch-update/
+ * TODO 数据库连接池, prepare statement 预编译
  * @author kuangcp
  * @date 18-6-14  下午9:02
  */
@@ -35,25 +37,26 @@ enum DBAction {
   }
 
   static DBAction initByDBConfig(DBConfig config) {
-    if (config == null) {
-      log.error("请初始化数据库配置")
+    log.debug("prepare init by {}", config)
+    if (Objects.isNull(config)) {
+      log.error("please init database config file: jdbc.yml ")
       return INSTANCE
     }
+
     DBType type
-    switch (config.type) {
-      case "mysql":
-        type = DBType.Mysql
-        break
-      case "postgresql":
-        type = DBType.PostgreSQL
-        break
-      default:
-        log.error("not support this database type : " + config.type)
-        return null
+    if (config.isThisType(DBType.Mysql)) {
+      type = DBType.Mysql
+    } else if (config.isThisType(DBType.PostgreSQL)) {
+      type = DBType.PostgreSQL
+    } else {
+      log.error("not support this database type : " + config.type)
+      return null
     }
+
     INSTANCE.driver = type.getDriver()
     INSTANCE.url = String.format(type.getUrl(), config.host, config.port, config.database,
         config.username, config.password)
+    log.debug("init from config: url={}", INSTANCE.url)
     return INSTANCE
   }
 
@@ -66,36 +69,25 @@ enum DBAction {
       Class.forName(driver)
       cn = DriverManager.getConnection(url)
     } catch (SQLException e) {
-      log.error(url + " 获取连接，异常！", e)
+      log.error("{} attempt get connection failed", url, e)
       throw e
     }
     return cn
   }
 
-  private void loadPreparedStatement(String sql) throws SQLException {
-    try {
-      getConnection()
-    } catch (SQLException e) {
-      throw e
+  boolean isTableExist(String tableName) {
+    def connection = getConnection()
+    def tables = connection.getMetaData().getTables(null, null, tableName, null)
+    if (tables.next()) {
+      return true
     }
-    ps = cn.prepareStatement(sql)
+    return false
   }
 
-  /**
-   * 查询全部的操作 返回值是ResultSet 切记使用完后要finally关闭
-   */
-  ResultSet queryBySQL(String sql) {
-    count++
-    try {
-      loadPreparedStatement(sql)
-      rs = ps.executeQuery()
-    } catch (Exception e) {
-      log.error("执行SQL失败", e)
-      return null
-    }
-    log.debug("这是第" + count + "次查询操作")
-    return rs
-  }
+//  querySQL(PreparedStatement ps) throws SQLException{
+//    cn.prepareStatement("")
+//    rs = ps.executeQuery()
+//  }
 
   /**
    * SQL查询并返回List集合
@@ -103,13 +95,13 @@ enum DBAction {
    * @param sql SQL 语句
    * @return List String数组 一行是一个String[] 按查询的字段顺序 SQL异常返回null
    */
-  List<String[]> queryReturnList(String sql) throws SQLException {
-    log.debug("查询SQL " + sql)
+  List<String[]> querySQL(String sql) throws SQLException {
+    log.debug("prepare execute query sql: {}", sql)
     ResultSet rs = queryBySQL(sql)
     if (rs == null) {
       return null
     }
-    List<String[]> data = new ArrayList<>(0)
+    List<String[]> data = new ArrayList<>()
 
     try {
       int cols = rs.getMetaData().getColumnCount()
@@ -130,25 +122,41 @@ enum DBAction {
   }
 
   /**
+   * 查询全部的操作 返回值是ResultSet 切记使用完后要finally关闭
+   */
+  ResultSet queryBySQL(String sql) {
+    count++
+    try {
+      loadPreparedStatement(sql)
+      rs = ps.executeQuery()
+    } catch (Exception e) {
+      log.error("execute sql failed ", e)
+      return null
+    }
+    log.debug("this {} query action ", count)
+    return rs
+  }
+
+  /**
    * 把增删改 合在一起 返回值是 布尔值
    * 各种连接已经关闭了不用再次关闭了
-   * SQL只能输一句，不能多句运行
    *
-   * @param sql 执行的SQL
+   * @param sql 执行的SQL(只能是一句)
    * @return boolean 是否执行成功
    */
   boolean executeUpdateSQL(String sql) throws SQLException {
-    log.debug("执行SQL " + sql)
+    log.debug("prepare execute sql: {}", sql)
+    // FIXME flag 是否有必要, twr和finally的问题
     boolean flag = true
     try {
       loadPreparedStatement(sql)
       int i = ps.executeUpdate()
-      log.debug("    增删改查成功_" + i + "_行受影响-->")
+      log.debug("execute success, {} line has influenced ", i)
       if (i != 1) {
         flag = false
       }
     } catch (Exception e) {
-      log.error("增删改查失败", e)
+      log.error("execute sql error: ", e)
       throw e
     } finally {
       this.closeAll()
@@ -156,6 +164,18 @@ enum DBAction {
     return flag
   }
 
+  boolean batchExecuteWithAffair(PreparedStatement ps){
+    Connection cn = ps.getConnection()
+    try {
+      cn.setAutoCommit(false)
+      ps.executeBatch()
+      cn.commit()
+    }catch(Exception e){
+      cn.rollback()
+    }finally{
+      cn.setAutoCommit(true)
+    }
+  }
   /**
    * 事务性, 执行多条SQL
    *
@@ -169,11 +189,11 @@ enum DBAction {
       cn.setAutoCommit(false)
       for (int i = 0; i < sqlArray.length; i++) {
         ps = cn.prepareStatement(sqlArray[i])
-        ps.addBatch()
-        log.debug("第" + i + "条记录插入成功")
+        ps.execute()
+        log.debug("the {} execute success, sql={}", i, sqlArray[i])
       }
-      ps.executeBatch()
-      log.info("批量操作无异常, 全部提交")
+
+      log.info("batch execute sql success, commit it ")
       cn.commit()
     } catch (Exception e) {
       success = false
@@ -182,7 +202,7 @@ enum DBAction {
       } catch (SQLException e1) {
         e1.printStackTrace()
       }
-      log.error("增删改查失败", e)
+      log.error("execute sql error", e)
     } finally {
       try {
         cn.setAutoCommit(true)
@@ -194,9 +214,6 @@ enum DBAction {
     return success
   }
 
-  /**
-   * 关闭数据库资源
-   */
   void closeAll() {
     try {
       if (rs != null) {
@@ -209,8 +226,18 @@ enum DBAction {
         cn.close()
       }
     } catch (SQLException e) {
-      log.error("资源关闭异常", e)
+      log.error("connection close error", e)
+      return
     }
-    log.debug("正常-关闭资源")
+    log.debug("closing connection successful")
+  }
+
+  private void loadPreparedStatement(String sql) throws SQLException {
+    try {
+      getConnection()
+    } catch (SQLException e) {
+      throw e
+    }
+    ps = cn.prepareStatement(sql)
   }
 }

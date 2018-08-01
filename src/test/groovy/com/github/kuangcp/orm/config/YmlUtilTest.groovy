@@ -1,5 +1,6 @@
 package com.github.kuangcp.orm.config
 
+import com.github.kuangcp.orm.base.DBType
 import org.junit.Test
 
 /**
@@ -26,7 +27,12 @@ class YmlUtilTest {
   @Test
   void testCreateFile() throws Exception {
     DBConfig dbConfig = new DBConfig()
-    dbConfig.setHost("33334")
+    dbConfig.setHost("localhost")
+    dbConfig.setPort(5432)
+    dbConfig.setUsername("postgres")
+    dbConfig.setPassword("jiushi")
+    dbConfig.setDatabase("key")
+    dbConfig.setType(DBType.PostgreSQL.name())
     boolean result = YmlUtil.createFile(dbConfig, createFile)
     println result
   }

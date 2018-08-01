@@ -65,4 +65,4 @@ appender("ERROR_FILE", RollingFileAppender) {
     level = ERROR
   }
 }
-root(DEBUG, ["STDOUT", "DEBUG_FILE", "WARN_FILE", "INFO_FILE", "ERROR_FILE"])
+root(DEBUG, ["STDOUT", "DEBUG_FILE"])

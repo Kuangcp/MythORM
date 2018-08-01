@@ -20,7 +20,7 @@ class DBActionTest extends GroovyTestCase {
       println dbConfig.get()
       DBAction action = DBAction.initByDBConfig(dbConfig.get())
       println action.getUrl()
-      List<String[]> result = action.queryReturnList('select * from user_type')
+      List<String[]> result = action.querySQL('select * from ui')
       result.forEach({
         println "表中数据 : "+it
       })

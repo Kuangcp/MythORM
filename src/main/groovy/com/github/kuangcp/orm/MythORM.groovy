@@ -41,6 +41,17 @@ enum MythORM {
     return INSTANCE
   }
 
+  // TODO 更改为prepareStatement
+  boolean saveAll(Collection collection) throws SQLException {
+    List<String> list = new ArrayList<>()
+    collection.forEach({
+      list.add(createSaveSQL(it))
+    })
+    log.debug("size={}", list.size())
+
+    return DBAction.INSTANCE.initByDBConfig(dbConfig).batchInsertWithAffair(list.toArray() as String[])
+  }
+
   /**
    * 将输入对象转换成SQL语句
    * 不能有除了属性的get方法之外的get方法，不然这里的SQL拼接会失败
@@ -49,6 +60,11 @@ enum MythORM {
    * @return boolean 是否成功
    */
   boolean save(Object obj) throws SQLException {
+    String sql = createSaveSQL(obj)
+    return DBAction.INSTANCE.initByDBConfig(dbConfig).executeUpdateSQL(sql)
+  }
+
+  private String createSaveSQL(Object obj) {
     if (!isConfigNotNull()) {
       return false
     }
@@ -104,11 +120,10 @@ enum MythORM {
     sqlBuilder.delete(sqlBuilder.length() - 1, sqlBuilder.length())
     valueBuilder.delete(valueBuilder.length() - 1, valueBuilder.length())
     sqlBuilder.append(")")
-    valueBuilder.append(")")
+    valueBuilder.append(");")
     String sql = sqlBuilder.toString() + valueBuilder.toString()
-    return DBAction.INSTANCE.initByDBConfig(dbConfig).executeUpdateSQL(sql)
+    return sql
   }
-
   /**
    * 传入对象更新对应不为空的值
    *
