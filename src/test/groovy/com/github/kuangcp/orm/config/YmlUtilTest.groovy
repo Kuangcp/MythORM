@@ -1,6 +1,7 @@
 package com.github.kuangcp.orm.config
 
 import com.github.kuangcp.orm.base.DBType
+import org.junit.Ignore
 import org.junit.Test
 
 /**
@@ -8,6 +9,7 @@ import org.junit.Test
  * @author kuangcp
  * @date 18-6-14  下午8:53
  */
+@Ignore
 class YmlUtilTest {
 
   /**

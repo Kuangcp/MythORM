@@ -1,6 +1,7 @@
 package com.github.kuangcp.orm
 
 import com.github.kuangcp.orm.config.DBConfig
+import org.junit.Ignore
 import org.junit.Test
 
 /**
@@ -8,6 +9,7 @@ import org.junit.Test
  * @author kuangcp
  * @date 18-6-15  上午9:19
  */
+@Ignore
 class DBActionTest extends GroovyTestCase {
 
   /**

@@ -10,6 +10,7 @@ import org.junit.Test
  * @author kuangcp
  * @date 18-6-15  上午10:35
  */
+@Ignore
 class MythORMTest {
 
   DBAction action

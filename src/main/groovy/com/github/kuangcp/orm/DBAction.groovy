@@ -164,17 +164,20 @@ enum DBAction {
     return flag
   }
 
-  boolean batchExecuteWithAffair(PreparedStatement ps){
+  // TODO 是否可行
+  boolean batchExecuteWithAffair(PreparedStatement ps) {
     Connection cn = ps.getConnection()
     try {
       cn.setAutoCommit(false)
       ps.executeBatch()
       cn.commit()
-    }catch(Exception e){
+    } catch (Exception e) {
+      log.error(e.getMessage(), e)
       cn.rollback()
-    }finally{
+    } finally {
       cn.setAutoCommit(true)
     }
+    return true
   }
   /**
    * 事务性, 执行多条SQL
