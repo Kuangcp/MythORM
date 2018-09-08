@@ -33,7 +33,7 @@ class YmlUtilTest {
     dbConfig.setPort(5432)
     dbConfig.setUsername("postgres")
     dbConfig.setPassword("jiushi")
-    dbConfig.setDatabase("key")
+    dbConfig.setDatabase("test")
     dbConfig.setType(DBType.PostgreSQL.name())
     boolean result = YmlUtil.createFile(dbConfig, createFile)
     println result

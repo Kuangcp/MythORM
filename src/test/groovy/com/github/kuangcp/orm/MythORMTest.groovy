@@ -1,10 +1,13 @@
 package com.github.kuangcp.orm
 
-import com.github.kuangcp.time.GetRunTime
+
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 
+import static com.github.kuangcp.orm.DBAction.DB_ACTION
+import static com.github.kuangcp.orm.MythORM.MYTH_ORM
+import static com.github.kuangcp.time.GetRunTime.GET_RUN_TIME
 /**
  * Created by https://github.com/kuangcp
  * @author kuangcp
@@ -15,15 +18,13 @@ class MythORMTest {
 
   DBAction action
   MythORM orm
-  GetRunTime countTime = GetRunTime.INSTANCE
 
   @Before
   void init() {
-    action = DBAction.INSTANCE.defaultInit()
-    orm = MythORM.INSTANCE.defaultInit()
+    action = DB_ACTION.defaultInit()
+    orm = MYTH_ORM.defaultInit()
 
     def exist = action.isTableExist("user_type")
-
 
     if (exist) {
       action.executeUpdateSQL("drop table user_type")
@@ -36,7 +37,7 @@ class MythORMTest {
 
     List<UserType> userTypeList = new ArrayList<>()
 
-    countTime.startCount()
+    GET_RUN_TIME.startCount()
     for (int i = 0; i < 10; i++) {
       UserType type = new UserType()
       type.a = i
@@ -46,24 +47,22 @@ class MythORMTest {
 //      assert result
     }
     boolean result = orm.saveAll(userTypeList)
-    countTime.endCount("batch affair")
+    GET_RUN_TIME.endCount("batch affair")
     assert result
   }
 
   @Test
   void testPrepare() {
-
     def statement = action.getConnection().prepareStatement("insert into user_type values(?, ?)")
 
-
-    countTime.startCount()
+    GET_RUN_TIME.startCount()
     for (int i = 0; i < 10; i++) {
       statement.setInt(1, i)
       statement.setInt(2, i + 1)
       def update = statement.executeUpdate()
       println update
     }
-    countTime.endCount("prepare statement")
+    GET_RUN_TIME.endCount("prepare statement")
   }
 
 //  @Test
@@ -75,8 +74,8 @@ class MythORMTest {
   @Test
   @Ignore
   void testListAll() {
-//    List<UserType> result = MythORM.INSTANCE.defaultInit().listAll(UserType.class)
-    List<UserType> result = MythORM.INSTANCE.listAll(UserType.class)
+//    List<UserType> result = MythORM.MYTH_ORM.defaultInit().listAll(UserType.class)
+    List<UserType> result = MYTH_ORM.listAll(UserType.class)
     if (result != null) {
       result.forEach({
         println it

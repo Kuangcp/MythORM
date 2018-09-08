@@ -18,27 +18,27 @@ import java.util.regex.Pattern
 @Slf4j
 enum MythORM {
 
-  INSTANCE
+  MYTH_ORM
 
-  DBConfig dbConfig
+  private DBConfig dbConfig = null
 
   /**
    * 采用默认配置进行初始化
    * @return
    */
   static MythORM defaultInit() {
-    if (INSTANCE.dbConfig == null) {
+    if (MYTH_ORM.dbConfig == null) {
       Optional<DBConfig> config = DBConfig.buildByYml()
 
       if (config.isPresent()) {
-        INSTANCE.dbConfig = config.get()
+        MYTH_ORM.dbConfig = config.get()
       } else {
         log.error("从默认配置文件加载数据库配置失败")
       }
     } else {
       log.warn("数据库默认配置已经加载, 无需重复加载")
     }
-    return INSTANCE
+    return MYTH_ORM
   }
 
   // TODO 更改为prepareStatement
@@ -49,7 +49,7 @@ enum MythORM {
     })
     log.debug("size={}", list.size())
 
-    return DBAction.INSTANCE.initByDBConfig(dbConfig).batchInsertWithAffair(list.toArray() as String[])
+    return DBAction.DB_ACTION.initByDBConfig(dbConfig).batchInsertWithAffair(list.toArray() as String[])
   }
 
   /**
@@ -61,7 +61,7 @@ enum MythORM {
    */
   boolean save(Object obj) throws SQLException {
     String sql = createSaveSQL(obj)
-    return DBAction.INSTANCE.initByDBConfig(dbConfig).executeUpdateSQL(sql)
+    return DBAction.DB_ACTION.initByDBConfig(dbConfig).executeUpdateSQL(sql)
   }
 
   private String createSaveSQL(Object obj) {
@@ -177,7 +177,7 @@ enum MythORM {
     sqlBuilder.delete(sqlBuilder.length() - 1, sqlBuilder.length())
     sqlBuilder.append(" ").append(condition)
     System.out.println(" 更新  " + sqlBuilder.toString())
-    return DBAction.INSTANCE.initByDBConfig(dbConfig).executeUpdateSQL(sqlBuilder.toString())
+    return DBAction.DB_ACTION.initByDBConfig(dbConfig).executeUpdateSQL(sqlBuilder.toString())
   }
 
   /**
@@ -199,7 +199,7 @@ enum MythORM {
     T obj
     DBAction db = null
     try {
-      db = DBAction.INSTANCE.initByDBConfig(dbConfig)
+      db = DBAction.DB_ACTION.initByDBConfig(dbConfig)
       ResultSet resultSet = db.queryBySQL(sql)
       Method[] methods = target.getMethods()
       while (resultSet.next()) {

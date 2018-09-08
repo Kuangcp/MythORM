@@ -19,7 +19,7 @@ import java.sql.*
 @ToString
 enum DBAction {
 
-  INSTANCE
+  DB_ACTION
 
   int count = 0
   PreparedStatement ps = null
@@ -33,14 +33,14 @@ enum DBAction {
     dbConfig.ifPresent({
       initByDBConfig(dbConfig.get())
     })
-    return INSTANCE
+    return DB_ACTION
   }
 
   static DBAction initByDBConfig(DBConfig config) {
     log.debug("prepare init by {}", config)
     if (Objects.isNull(config)) {
       log.error("please init database config file: jdbc.yml ")
-      return INSTANCE
+      return DB_ACTION
     }
 
     DBType type
@@ -53,11 +53,11 @@ enum DBAction {
       return null
     }
 
-    INSTANCE.driver = type.getDriver()
-    INSTANCE.url = String.format(type.getUrl(), config.host, config.port, config.database,
+    DB_ACTION.driver = type.getDriver()
+    DB_ACTION.url = String.format(type.getUrl(), config.host, config.port, config.database,
         config.username, config.password)
-    log.debug("init from config: url={}", INSTANCE.url)
-    return INSTANCE
+    log.debug("init from config: url={}", DB_ACTION.url)
+    return DB_ACTION
   }
 
   /**
