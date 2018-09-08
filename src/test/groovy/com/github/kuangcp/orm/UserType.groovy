@@ -9,6 +9,7 @@ import groovy.transform.ToString
  */
 @ToString
 class UserType {
+
   int a
   int b
 }

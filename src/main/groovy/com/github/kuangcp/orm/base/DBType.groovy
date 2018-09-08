@@ -8,10 +8,12 @@ package com.github.kuangcp.orm.base
 enum DBType {
 
   Mysql("com.mysql.jdbc.Driver",
-      "jdbc:mysql://%s:%s/%s?user=%s&password=%s&userUnicode=true&characterEncoding=UTF8&useSSL=false"),
+      "jdbc:mysql://%s:%s/%s?user=%s&password=%s" +
+          "&userUnicode=true&characterEncoding=UTF8&useSSL=false"),
 
   PostgreSQL("org.postgresql.Driver",
-      "jdbc:postgresql://%s:%s/%s?user=%s&password=%s&useUnicode=true&characterEncoding=utf-8&useSSL=false")
+      "jdbc:postgresql://%s:%s/%s?user=%s&password=%s" +
+          "&useUnicode=true&characterEncoding=utf-8&useSSL=false")
 
   /**
    * @param driver driver class

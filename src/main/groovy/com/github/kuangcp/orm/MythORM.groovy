@@ -49,7 +49,8 @@ enum MythORM {
     })
     log.debug("size={}", list.size())
 
-    return DBAction.DB_ACTION.initByDBConfig(dbConfig).batchInsertWithAffair(list.toArray() as String[])
+    return DBAction.DB_ACTION.initByDBConfig(dbConfig).
+        batchInsertWithAffair(list.toArray() as String[])
   }
 
   /**

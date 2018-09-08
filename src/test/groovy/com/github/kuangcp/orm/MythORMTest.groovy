@@ -1,6 +1,5 @@
 package com.github.kuangcp.orm
 
-
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
@@ -8,6 +7,7 @@ import org.junit.Test
 import static com.github.kuangcp.orm.DBAction.DB_ACTION
 import static com.github.kuangcp.orm.MythORM.MYTH_ORM
 import static com.github.kuangcp.time.GetRunTime.GET_RUN_TIME
+
 /**
  * Created by https://github.com/kuangcp
  * @author kuangcp
